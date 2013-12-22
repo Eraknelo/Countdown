@@ -9,11 +9,30 @@ local timeouts = {}
 local playerTimeout = 30
 
 Events:Subscribe("PlayerChat", function (args)
-	if args.text ~= "/countdown" then return true end
+	local commands = {}
+	for command in string.gmatch(args.text, "[^%s]+") do
+		table.insert(commands, command)
+	end
+	
+	if commands[1] ~= "/countdown" then return true end
 	
 	if activeCountdowns then
 		Chat:Send(args.player, "Countdown in progress.", textColor)
 		return false
+	end
+	
+	if commands[2] ~= nil then
+		local secondsCommandNumber = tonumber(commands[2])
+		if secondsCommandNumber == nil then
+			Chat:Send(args.player, "That is not a valid number.", textColor)
+			return false
+		elseif secondsCommandNumber < 3 or secondsCommandNumber > 5 then
+			Chat:Send(args.player, "You can only specify a number from 3 to 5 seconds.", textColor)
+			return false
+		end
+		secondsToGo = secondsCommandNumber + 1
+	else
+		secondsToGo = 4
 	end
 	
 	local seconds = countdownTimer:GetSeconds()
@@ -28,12 +47,7 @@ Events:Subscribe("PlayerChat", function (args)
 	
 	timeouts[args.player:GetId()] = seconds
 	activeCountdowns = true
-	secondsToGo = 4
 	timeOfLastCount = countdownTimer:GetMilliseconds()
-	
-	for k,v in pairs(timeouts) do
-		print(k, v)
-	end
 	
 	tickSubscription = Events:Subscribe("PreTick", function (args)
 		local milliseconds = countdownTimer:GetMilliseconds()
